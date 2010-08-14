@@ -19,6 +19,15 @@ var jl;
             action:2
         },
         
+        //common expressions
+        exp:{
+            //gets each part of a dot notation path
+            get_path:/\./g,
+            
+            //escapes string so it can be used in a regular expression
+            escape_regex:/[-[\]{}()*+?.,\\^$|#\s]/g
+        },
+        
         //common javascript types
         type:{
             nothing:-1,
@@ -226,7 +235,7 @@ var jl;
                         }
                         
                         //get the full path for the field name
-                        detail.path = framework.util.getPath(detail.field);
+                        detail.path = detail.field;
                         
                         //queue the command to the current set
                         self.commands[self.commands.length-1].push(detail);
@@ -364,25 +373,64 @@ var jl;
         //variety of helper methods
         util:{
         
+            //creates an invocation handler for a field
+            //name instead of grabbing values
+            invoke:function(obj, args) {
+                //copy the array to avoid breaking any other calls
+                args = args.concat();
+                
+                //the name should be the first argument
+                var path = args[0];
+
+                //find the method and extract the arguments
+                var method = framework.util.findValue(obj, path);
+                args = jLinq.util.select(args, null, 1, null);
+                
+                //return the result of the call
+                try {
+                    return method.apply(obj, args);
+                }
+                catch (e) {
+                    return null;
+                }
+                
+            },
+        
             //gets a path from a field name
             getPath:function(path) {
-                return (path+"").split(/\./g);
+                return (path+"").split(framework.exp.get_path);
             },
         
             //searches an object to find a value
             findValue:function(obj, path) {
             
-                //make sure this is a path
-                if (framework.util.isType(framework.type.string, path)) {
+                //start by checking if this is actualy an attempt to 
+                //invoke a value on this property
+                if (framework.util.isType(framework.type.array, path)) {
+                    return framework.util.invoke(obj, path);
+                    
+                }
+                //if this referring to a field
+                else if (framework.util.isType(framework.type.string, path)) {
+
+                    //get each part of the path
                     path = framework.util.getPath(path);
+
+                    //search for the record
+                    var index = 0;
+                    while(obj != null && index < path.length) {
+                        obj = obj[path[index++]];
+                    }
+                    
+                    //return the final found object
+                    return obj;
+                    
                 }
-            
-                //search for the record
-                var index = 0;
-                while(obj != null && index < path.length) {
-                    obj = obj[path[index++]];
+                //nothing that can be read, just return the value
+                else {
+                    return obj;
                 }
-                return obj;
+                
             },
         
             //returns the value at the provided index
@@ -394,7 +442,7 @@ var jl;
         
             //makes a string save for regular expression searching
             regexEscape:function(val) {
-                return (val ? val : "").toString().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+                return (val ? val : "").toString().replace(framework.exp.escape_regex, "\\$&");
             },
             
             //matches expressions to a value
@@ -769,6 +817,12 @@ var jl;
                     },
                     other:function() { return jLinq.util.regexMatch(value, this.value, this.ignoreCase); }
                 });
+            }},
+            
+        //checks if the value matches the type provided
+        { name:"type", type:framework.command.query, 
+            method:function(type) {
+                return jLinq.util.isType(type, this.value);
             }},
             
         //is the value greater than the argument

@@ -38,6 +38,7 @@ var jl;
             regex:4,
             boolean:5,
             method:6,
+            datetime:7,
             object:99
         },
         
@@ -552,7 +553,7 @@ var jl;
             
             //performs sorting on a collection of records
             reorder:function(collection, fields, ignoreCase) {
-            
+
                 //reverses the fields so that they are organized
                 //in the correct order
                 return framework.util._performSort(collection, fields, ignoreCase);
@@ -586,7 +587,7 @@ var jl;
                     }
                     
                     //perform the sorting
-                    var result = a < b ? -1 : a > b ? 1 : 0;
+                    var result = (a < b) ? -1 : (a > b) ? 1 : 0;
                     return desc ? -result : result;
                     
                 });
@@ -654,8 +655,11 @@ var jl;
             //converts an object to an array of elements
             toArray:function(obj) {
                 var items = [];
-                for (var item in obj) {
-                    items.push(obj[item]);
+                if (obj.length) {
+                    for (var i = 0; i < obj.length; i++) { items.push(obj[i]); }
+                }
+                else {
+                    for (var item in obj) { items.push(obj[item]); }
                 }
                 return items;
             },
@@ -711,6 +715,7 @@ var jl;
     framework.library.addType(framework.type.regex, function(value) { return value.exec && value.compile; });
     framework.library.addType(framework.type.boolean, function(value) { return value === true || value === false; });
     framework.library.addType(framework.type.method, function(value) { return value.apply && value.call; });
+    framework.library.addType(framework.type.datetime, function(value) { return value.getDate && value.getTime; });
     
     //add the default methods
     framework.library.extend([

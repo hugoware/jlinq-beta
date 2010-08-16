@@ -79,9 +79,10 @@ var jl;
                     throw "jLinq can only query arrays of JSON objects.";
                 }
                 
-                //clone the collection instead of using the original
-                collection = clone == null || clone == true
-                    ? collection.slice()
+                //clone the array to prevent changing objects - by default
+                //this is off
+                collection = jLinq.alwaysClone || clone 
+                    ? framework.util.clone(collection) 
                     : collection;
             
                 //holds the state of the current query
@@ -374,22 +375,59 @@ var jl;
         //variety of helper methods
         util:{
         
+            //clones each item in an array
+            cloneArray:function(array) {
+                var result = [];
+                framework.util.each(array, function(item) {
+                    result.push(framework.util.clone(item));
+                });
+                return result;
+            },
+        
+            //creates a copy of an object
+            clone:function(obj) {
+            
+                //for arrays, copy each item
+                if (framework.util.isType(framework.type.array, obj)) { 
+                    return framework.util.cloneArray(obj);
+                }
+                //for object check each value
+                else if (framework.util.isType(framework.type.object, obj)) {
+                    var clone = {};
+                    for(var item in obj) {
+                        clone[item] = framework.util.clone(obj[item]);
+                    }
+                    return clone;
+                }
+                //all other types just return the value
+                else {
+                    return obj;
+                }
+            },
+        
             //creates an invocation handler for a field
             //name instead of grabbing values
             invoke:function(obj, args) {
                 //copy the array to avoid breaking any other calls
                 args = args.concat();
                 
-                //the name should be the first argument
+                //start by getting the path
                 var path = args[0];
-
+                
                 //find the method and extract the arguments
                 var method = framework.util.findValue(obj, path);
-                args = jLinq.util.select(args, null, 1, null);
+                args = framework.util.select(args, null, 1, null);
+                
+                //if we are invoking a method that hangs off
+                //another object then we need to find the value
+                path = path.replace(/\..*$/, "");
+                var parent = framework.util.findValue(obj, path);
+                obj = parent === method ? obj : parent;
                 
                 //return the result of the call
                 try {
-                    return method.apply(obj, args);
+                    var result = method.apply(obj, args);
+                    return result;
                 }
                 catch (e) {
                     return null;
@@ -895,7 +933,7 @@ var jl;
             method:function() {
                 return this.compare({
                     array:function() { return this.value.length == 0; },
-                    string:function() { return this.value+"" == ""; },
+                    string:function() { return this.value == ""; },
                     other:function() { return this.value == null; }
                 });
             }},
@@ -1104,6 +1142,10 @@ var jl;
     
     //set the public object
     jLinq = {
+    
+        //determines if new queries should always be
+        //cloned to prevent accidental changes to objects
+        alwaysClone:false,
     
         //command types (select, query, action)
         command:framework.command,

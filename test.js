@@ -70,6 +70,14 @@ var test = {
             this.assert(jLinq.from(data.users).match("permissions", /^re/).count() == 32, "Match failed with case-insensitive string matching.");
             this.assert(jLinq.from(data.users).useCase().match("permissions", /^RE/).count() == 4, "Match failed with case-sensitive string matching.");
         }},
+        {name:"Sort command behaves correctly.", method:function() {	
+            
+            //check string sorting
+            var results = jlinq.from(data.users).starts("first", "a").sort("first").select(function(rec) { return rec.first.toLowerCase(); });
+            var ordered = results[0] == "abby" && results[1] == "abigail" && results[2] == "adam" && results[3] == "audrey" && results[4] == "ava";
+            this.assert(ordered, "String sorting failed to create the correct order.");
+        
+        }},
     ],
     
     //measures the time of an action
@@ -96,9 +104,18 @@ var test = {
             if (ok) { return; }                    
             self.errors.push(msg);
         };
+        
+        //displays the final count
+        var showTotal = function() {
+            self.target.innerHTML += "<h4>Total Tests: " + self.total + "</h4>";
+        };
 
         //handles doing the actual work for tests
         var performTest = function() {
+            if (!test.tests[self.index]) { 
+                showTotal();
+                return; 
+            }
 	
             //reset
             self.errors = [];
@@ -124,7 +141,7 @@ var test = {
             else {
                 result.push("success' >");
                 result.push("<div class='result-title'>#" + (self.index + 1) + ": " + test.tests[self.index].name  + " :: " + self.tests + " tests (" + count + "ms)</div>");
-            }
+            }i
             result.push("</div>");
             self.target.innerHTML += result.join("");
         
@@ -133,7 +150,7 @@ var test = {
             self.total += self.tests;
             self.tests = 0;
             if (self.index >= test.tests.length) { 
-                self.target.innerHTML += "<h4>Total Tests: " + self.total + "</h4>";
+                showTotal();
                 return; 
             }
             setTimeout(performTest, 1);

@@ -72,16 +72,16 @@ var jl;
             },
             
             //starts a new jLinq query
-            query:function(collection, clone) {
+            query:function(collection, params) {
             
                 //make sure something is there
                 if (!framework.util.isType(framework.type.array, collection)) {
-                    throw "jLinq can only query arrays of JSON objects.";
+                    throw "jLinq can only query arrays of objects.";
                 }
                 
                 //clone the array to prevent changing objects - by default
                 //this is off
-                collection = jLinq.alwaysClone || clone 
+                collection = params.clone || (params.clone == null && jLinq.alwaysClone)
                     ? framework.util.clone(collection) 
                     : collection;
             
@@ -92,7 +92,7 @@ var jl;
                     instance:{
                     
                         //should this query ignore case
-                        ignoreCase:true,
+                        ignoreCase:jLinq.ignoreCase,
                         
                         //should the next command be evaluated as not
                         not:false,
@@ -374,6 +374,18 @@ var jl;
         
         //variety of helper methods
         util:{
+        
+        	//removes trailing and leading spaces from a value
+        	trim:function(value) {
+        		
+        		//get the string value
+        		value = value == null ? "" : value;
+        		value = value.toString();
+        		
+        		//trim the spaces
+        		return value.replace(/^\s*|\s*$/g, "");
+        	
+        	},
         
             //clones each item in an array
             cloneArray:function(array) {
@@ -778,7 +790,7 @@ var jl;
             
         //performs an action for each record
         { name:"each", type:framework.command.action,
-            method:function(field, action) {
+            method:function(action) {
                 jLinq.util.each(this.records, function(record) { action(record); });
             }},
             
@@ -933,7 +945,7 @@ var jl;
             method:function() {
                 return this.compare({
                     array:function() { return this.value.length == 0; },
-                    string:function() { return this.value == ""; },
+                    string:function() { return jLinq.util.trim(this.value).length == 0; },
                     other:function() { return this.value == null; }
                 });
             }},
@@ -986,34 +998,32 @@ var jl;
         //skips the requested number of records
         { name:"skip", type:framework.command.select,
             method:function(skip, selection) {
-                var results = this.when(selection, {
+                this.records = this.when(selection, {
                     method:function() { return jLinq.util.select(this.records, selection, skip, null); },
                     object:function() { return jLinq.util.select(this.records, selection, skip, null); },
                     other:function() { return jLinq.util.select(this.records, null, skip, null); }
                 });
-                return jLinq.from(results);
+				return this.query;
             }},
             
         //takes the requested number of records
         { name:"take", type:framework.command.select,
             method:function(take, selection) {
-                var results = this.when(selection, {
+                return this.when(selection, {
                     method:function() { return jLinq.util.select(this.records, selection, null, take); },
                     object:function() { return jLinq.util.select(this.records, selection, null, take); },
                     other:function() { return jLinq.util.select(this.records, null, null, take); }
                 });
-                return jLinq.from(results);
             }},
             
         //skips and takes records
         { name:"skipTake", type:framework.command.select,
             method:function(skip, take, selection) {
-                var results = this.when(selection, {
+                return this.when(selection, {
                     method:function() { return jLinq.util.select(this.records, selection, skip, take); },
                     object:function() { return jLinq.util.select(this.records, selection, skip, take); },
                     other:function() { return jLinq.util.select(this.records, null, skip, take); }
                 });
-                return jLinq.from(results);
             }},
             
         //selects the remaining records
@@ -1069,41 +1079,23 @@ var jl;
             method:function() {
                 return this.removed.length == 0;
             }},
-            
-        //returns the first record found
-        { name:"first", type:framework.command.select,
-            method:function() {
-                return jLinq.util.elementAt(this.records, 0);
-            }},
-            
-        //returns the last record found
-        { name:"last", type:framework.command.select,
-            method:function() {
-                return jLinq.util.elementAt(this.records, this.records.length - 1);
-            }},
-            
-        //returns the record at the provided index
-        { name:"at", type:framework.command.select,
-            method:function(index) {
-                return jLinq.util.elementAt(this.records, index);
-            }},
                 
         //returns the first record found or the fallback value if nothing was found
-        { name:"firstOr", type:framework.command.select,
+        { name:"first", type:framework.command.select,
             method:function(fallback) {
                 var record = jLinq.util.elementAt(this.records, 0);
                 return record == null ? fallback : record;
             }},
             
         //returns the last record found or the fallback value if nothing was found
-        { name:"lastOr", type:framework.command.select,
+        { name:"last", type:framework.command.select,
             method:function(fallback) {
                 var record = jLinq.util.elementAt(this.records, this.records.length - 1);
                 return record == null ? fallback : record;
             }},
             
         //returns the record at the provided index or the fallback value if nothing was found
-        { name:"atOr", type:framework.command.select,
+        { name:"at", type:framework.command.select,
             method:function(index) {
                 var record = jLinq.util.elementAt(this.records, index);
                 return record == null ? fallback : record;
@@ -1118,7 +1110,11 @@ var jl;
         //selects the remaining records
         { name:"removed", type:framework.command.select,
             method:function() {
-                return this.removed;
+				return this.when(selection, {
+                    method:function() { return jLinq.util.select(this.removed, selection); },
+                    object:function() { return jLinq.util.select(this.removed, selection); },
+                    other:function() { return this.removed; }
+                });
             }},
             
         //performs a manual comparison of records
@@ -1146,6 +1142,9 @@ var jl;
         //determines if new queries should always be
         //cloned to prevent accidental changes to objects
         alwaysClone:false,
+        
+        //sets the default for jLinq query case checking
+        ignoreCase:true,
     
         //command types (select, query, action)
         command:framework.command,
@@ -1156,8 +1155,20 @@ var jl;
         //allows command to be added to the library
         extend:function() { framework.library.extend.apply(null, arguments); },
         
+        //core function to start and entirely new query
+        query:function(collection, params) { 
+        	return library.framework.query(collection, params); 
+		},
+        
         //starts a new query with the array provided
-        from:function(collection) { return framework.library.query(collection); },
+        from:function(collection) { 
+        	return framework.library.query(collection, { clone:true });
+		},
+        
+        //starts a new query that will change records
+        modify:function(collection) { 
+        	return framework.library.query(collection, { clone:false });
+		},
         
         //returns a list of commands in the library
         getCommands:function() {
@@ -1175,6 +1186,9 @@ var jl;
         
         //helper functions for jLinq
         util:{
+        
+        	//removes leading and trailing spaces
+        	trim:framework.util.trim,
         
             //loops and finds a value in an object from a path
             findValue:framework.util.findValue,

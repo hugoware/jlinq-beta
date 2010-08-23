@@ -15,9 +15,17 @@ var test = {
     
     //the actual tests to perform
     tests:[
-        {name:"Start new query from collection", method:function() {	
+        {name:"Starting new collections", method:function() {	
             //problem with empty arrays
-            this.assert(jLinq.from([1,1,1]), "Unable to create new query from collection.");
+            try { jlinq.from(); this.assert(false, "Created a new query using 'from' but no arguments.");
+            } catch(e) { this.assert(true); }
+            
+            try { jlinq.modify(); this.assert(false, "Created a new query using 'modify' but no arguments.");
+            } catch(e) { this.assert(true); }
+            
+            try { jlinq.query(); this.assert(false, "Created a new query using 'query' but no arguments.");
+            } catch(e) { this.assert(true); }
+            
         }},
         {name:"Fail new query when nothing is provided", method:function() {
             try { jLinq.from(null); this.assert(false, "Failed to throw error on nulll collection"); }
@@ -62,6 +70,36 @@ var test = {
             this.assert(jLinq.from(data.users).contains("permissions", "write").count() == 13, "case insensitive array checking did not find correct number of records");
             this.assert(jLinq.from(data.users).useCase().contains("permissions", "WRITE").count() == 3, "case sensitive array checking did not find correct number of records");
         }},
+        {name:"Greater command behaves correctly.", method:function() {
+        	this.assert(jlinq.from(data.users).greater("age", 40).count() == 10, "Numeric failed to find correct record count.");
+        	this.assert(jlinq.from(data.users).greater("permissions", 2).count() == 4, "Array failed to find correct record count.");
+        	this.assert(jlinq.from(data.users).greater("first", 4).count() == 19, "String failed to find correct record count.");
+        }},
+        {name:"GreaterEquals command behaves correctly.", method:function() {
+        	this.assert(jlinq.from(data.users).greaterEquals("age", 40).count() == 11, "Numeric failed to find correct record count.");
+        	this.assert(jlinq.from(data.users).greaterEquals("permissions", 2).count() == 13, "Array failed to find correct record count.");
+        	this.assert(jlinq.from(data.users).greaterEquals("first", 4).count() == 30, "String failed to find correct record count.");
+        }},
+        {name:"Less command behaves correctly.", method:function() {
+        	this.assert(jlinq.from(data.users).less("age", 40).count() == 21, "Numeric failed to find correct record count.");
+        	this.assert(jlinq.from(data.users).less("permissions", 2).count() == 19, "Array failed to find correct record count.");
+        	this.assert(jlinq.from(data.users).less("first", 4).count() == 2, "String failed to find correct record count.");
+        }},
+        {name:"LessEquals command behaves correctly.", method:function() {
+        	this.assert(jlinq.from(data.users).lessEquals("age", 40).count() == 22, "Numeric failed to find correct record count.");
+        	this.assert(jlinq.from(data.users).lessEquals("permissions", 2).count() == 28, "Array failed to find correct record count.");
+        	this.assert(jlinq.from(data.users).lessEquals("first", 4).count() == 13, "String failed to find correct record count.");
+        }},
+        {name:"Between command behaves correctly.", method:function() {
+        	this.assert(jlinq.from(data.users).between("age", 14, 21).count() == 4, "Numeric failed to find correct record count.");
+        	this.assert(jlinq.from(data.users).between("permissions", 1, 3).count() == 9, "Array failed to find correct record count.");
+        	this.assert(jlinq.from(data.users).between("first", 3, 5).count() == 11, "String failed to find correct record count.");
+        }},
+        {name:"BetweenEquals command behaves correctly.", method:function() {
+        	this.assert(jlinq.from(data.users).betweenEquals("age", 14, 21).count() == 9, "Numeric failed to find correct record count.");
+        	this.assert(jlinq.from(data.users).betweenEquals("permissions", 1, 3).count() == 32, "Array failed to find correct record count.");
+        	this.assert(jlinq.from(data.users).betweenEquals("first", 3, 5).count() == 23, "String failed to find correct record count.");
+        }},
         {name:"Match command behaves correctly.", method:function() {	
             this.assert(jLinq.from(data.users).match("first", /^a/).count() == 5, "Match failed with case-insensitive string matching.");
             this.assert(jLinq.from(data.users).useCase().match("first", /a$/).count() == 3, "Match failed with case-sensitive string matching.");
@@ -76,6 +114,16 @@ var test = {
             var results = jlinq.from(data.users).starts("first", "a").sort("first").select(function(rec) { return rec.first.toLowerCase(); });
             var ordered = results[0] == "abby" && results[1] == "abigail" && results[2] == "adam" && results[3] == "audrey" && results[4] == "ava";
             this.assert(ordered, "String sorting failed to create the correct order.");
+            
+			//check numeric sorting
+            results = jlinq.from(data.users).sort("age").select(function(rec) { return rec.age; });
+            ordered = results[0] == 12 && results[1] == 14 && results[2] == 14 && results[3] == 16 && results[4] == 17;
+            this.assert(ordered, "Numeric sorting failed to create the correct order.");
+            
+            //boolean sorting
+            results = jlinq.from([{val:true},{val:false}]).sort("val").select(function(r) { return r.val; });
+            ordered = results[0] === false && results[1] === true;
+            this.assert(ordered, "Boolean sorting failed to create the correct order.");
         
         }},
     ],
@@ -91,6 +139,10 @@ var test = {
     //prepares the framework
     init:function() {
     
+    	//make sure not so modify the records each selection
+    	jlinq.alwaysClone = true;
+    	
+    	//set the defaults
         var self = this;
         self.index = 0;
         self.errors = [];
@@ -141,7 +193,7 @@ var test = {
             else {
                 result.push("success' >");
                 result.push("<div class='result-title'>#" + (self.index + 1) + ": " + test.tests[self.index].name  + " :: " + self.tests + " tests (" + count + "ms)</div>");
-            }i
+            }
             result.push("</div>");
             self.target.innerHTML += result.join("");
         
@@ -165,5 +217,5 @@ var test = {
 };
 
 //start the testing framework
-setTimeout(test.init, 500);
+setTimeout(test.init, 100);
     

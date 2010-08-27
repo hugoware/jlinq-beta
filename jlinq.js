@@ -25,7 +25,7 @@ var jl;
             get_path:/\./g,
             
             //escapes string so it can be used in a regular expression
-            escape_regex:/[-[\]{}()*+?.,\\^$|#\s]/g
+            escape_regex:/[\-\[\]\{\}\(\)\*\+\?\.\,\\\^\$\|\#\s]/g
         },
         
         //common javascript types
@@ -635,6 +635,11 @@ var jl;
                         a = a.toLowerCase();
                         b = b.toLowerCase();
                     }
+                    //if there is a length attribute use it instead
+                    else if (a.length && b.length) {
+                    	a = a.length;
+                    	b = b.length;
+                    }
                     
                     //perform the sorting
                     var result = (a < b) ? -1 : (a > b) ? 1 : 0;
@@ -1096,7 +1101,7 @@ var jl;
             
         //returns the record at the provided index or the fallback value if nothing was found
         { name:"at", type:framework.command.select,
-            method:function(index) {
+            method:function(index, fallback) {
                 var record = jLinq.util.elementAt(this.records, index);
                 return record == null ? fallback : record;
             }},
@@ -1109,7 +1114,7 @@ var jl;
             
         //selects the remaining records
         { name:"removed", type:framework.command.select,
-            method:function() {
+            method:function(selection) {
 				return this.when(selection, {
                     method:function() { return jLinq.util.select(this.removed, selection); },
                     object:function() { return jLinq.util.select(this.removed, selection); },

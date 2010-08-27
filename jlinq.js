@@ -820,7 +820,7 @@ var jl;
         { name:"assign", type:framework.command.action,
             method:function(source, alias, pk, fk, fallback) {
                 jLinq.util.each(this.records, function(record) {
-                    record[alias] = jLinq.from(source).equals(fk, record[pk]).firstOr(fallback);
+                    record[alias] = jLinq.from(source).equals(fk, record[pk]).first(fallback);
                 });
             }},
             

@@ -108,6 +108,11 @@ var test = {
             this.assert(jLinq.from(data.users).match("permissions", /^re/).count() == 32, "Match failed with case-insensitive string matching.");
             this.assert(jLinq.from(data.users).useCase().match("permissions", /^RE/).count() == 4, "Match failed with case-sensitive string matching.");
         }},
+        {name:"Regex escaping matching is valid", method:function() {
+        	this.assert(jlinq.from([{value:"x[r]{r}^r$"}]).ends("value", "[r]{r}^r$").any(), "Failed to escape regex characters for matching.");
+			this.assert(jlinq.from([{value:"x^r$"}]).ends("value", "^R$").any(), "Failed to escape regex characters for matching - case-insensitive.");
+			this.assert(jlinq.from([{value:"x^r$"}]).useCase().ends("value", "^R$").none(), "Failed to escape regex characters for matching - case-sensitive.");
+        }},
         {name:"Sort command behaves correctly.", method:function() {	
             
             //check string sorting
@@ -124,8 +129,100 @@ var test = {
             results = jlinq.from([{val:true},{val:false}]).sort("val").select(function(r) { return r.val; });
             ordered = results[0] === false && results[1] === true;
             this.assert(ordered, "Boolean sorting failed to create the correct order.");
+            
+            //array sorting
+            results = jlinq.from([{val:[1,1,1,1]},{val:[1,1,1]},{val:[1]}]).sort("val").select(function(r) { return r.val.length; });
+            ordered = results[0] == 1 && results[1] == 3 && results[2] == 4;
+            this.assert(ordered, "Array length sorting failed to create correct order.");
         
         }},
+		{name:"First command behaves correctly", method:function() {
+			this.assert(jlinq.from([{val:1},{val:2},{val:3}]).first().val === 1, "failed to find the first record in the results.");
+			this.assert(jlinq.from([]).first() == null, "failed to find null when nothing matched as the first value.");
+			this.assert(jlinq.from([]).first({val:99}).val === 99, "failed to fall back to default value when nothing was found.");
+			this.assert(jlinq.from([{val:1},{val:2},{val:3}]).first({val:99}).val === 1, "used default value instead of first value as expected.");
+		}},
+		{name:"Last command behaves correctly", method:function() {
+			this.assert(jlinq.from([{val:1},{val:2},{val:3}]).last().val === 3, "failed to find the first record in the results.");
+			this.assert(jlinq.from([]).last() == null, "failed to find null when nothing matched as the first value.");
+			this.assert(jlinq.from([]).last({val:99}).val === 99, "failed to fall back to default value when nothing was found.");
+			this.assert(jlinq.from([{val:1},{val:2},{val:3}]).last({val:99}).val === 3, "used default value instead of first value as expected.");
+		}},
+		{name:"At command behaves correctly", method:function() {
+			this.assert(jlinq.from([{val:1},{val:2},{val:3}]).at(1).val === 2, "failed to find the first record in the results.");
+			this.assert(jlinq.from([]).at(1) == null, "failed to find null when nothing matched as the first value.");
+			this.assert(jlinq.from([]).at(2, {val:99}).val === 99, "failed to fall back to default value when nothing was found.");
+			this.assert(jlinq.from([{val:1},{val:2},{val:3}]).at(1, {val:99}).val === 2, "used default value instead of first value as expected.");
+		}},
+		{name:"Count command behaves correctly", method:function() {
+			this.assert(jlinq.from([]).count() == 0, "Found matches on empty array.");
+			this.assert(jlinq.from([1,1,1]).count() == 3, "Did not find correct count on a non-query select.");
+			this.assert(jlinq.from([{val:1},{val:1},{val:1},{val:2}]).equals("val", 1).count() == 3, "Did not select the correct number of records on a query count.");
+		
+		}},
+		{name:"Any command works correctly", method:function() {
+			this.assert(!jlinq.from([]).any(), "Returned that values were found .");
+			this.assert(jlinq.from([1,1,1]).any(), "Did not find matches in an array.");
+			this.assert(jlinq.from([{val:1},{val:1},{val:1},{val:2}]).equals("val", 2).any(), "Did not find match after query.");
+		}},
+		{name:"All command works correctly", method:function() {
+			this.assert(jlinq.from([]).all(), "Empty query on all matches returns true.");
+			this.assert(jlinq.from([1,1,1]).all(), "Returned not all values were a match when true should have been returned.");
+			this.assert(!jlinq.from([{val:1},{val:1},{val:1},{val:2}]).equals("val", 1).all(), "Returned that all values were a match when false should have been returned.");
+		}},
+		{name:"None command works correctly", method:function() {
+			this.assert(jlinq.from([]).none(), "Empty query on all matches returns true.");
+			this.assert(!jlinq.from([1,1,1]).none(), "returned there were no matches when there should be.");
+			this.assert(jlinq.from([{val:1},{val:1},{val:1},{val:2}]).equals("val", 999).none(), "Query attempt should show no matches but returned false.");
+		}},
+		{name:"Removed selector works correctly", method:function() {
+			this.assert(jlinq.from([{val:1},{val:2},{val:3}]).equals("val", 1).removed().length == 2, "Did not return the correct number of non-matches");
+			this.assert(jlinq.from([{val:1},{val:2},{val:3}]).less("val", 5).removed().length == 0, "Returned removed records when query should have nothing removed.");
+			this.assert(jlinq.from([{val:1},{val:2},{val:3}]).greater("val", 5).removed().length == 3, "All records should be removed but not all records were returned.");
+			this.assert(jlinq.from([]).removed().length == 0, "Empty array returned a value from removed.");
+		}},
+		{name:"Distinct command works correctly", method:function() {
+			var data = [{val:"a"},{val:"b"},{val:"c"},{val:"A"},{val:"B"},{val:"C"}];
+			this.assert(jlinq.from(data).distinct("val").length == 3, "Distinct case insensitive did not return the correct total");
+			this.assert(jlinq.from(data).useCase().distinct("val").length == 6, "Distinct case sensitive did not return the correct total");
+			this.assert(jlinq.from([{val:0},{val:0},{val:1},{val:1},{val:2},{val:2}]).distinct("val").length == 3, "numeric distinct did not return the correct count.");
+			this.assert(jlinq.from([{val:false},{val:false},{val:true},{val:true}]).distinct("val").length == 2, "boolean distinct did not return the correct count.");
+			this.assert(jlinq.from([{val:new Date("1/1/1900")},{val:new Date("1/1/1900")},{val:new Date("2/1/1980")},{val:new Date("2/1/1980")}]).distinct("val").length == 2, "date distinct did not return the correct count.");
+		}},
+		{name:"Group command works correctly", method:function() {
+		
+			//string matching
+			var data = [{val:"a"},{val:"b"},{val:"c"},{val:"A"},{val:"B"},{val:"C"},{val:"A"},{val:"B"},{val:"C"}];
+			var result = jlinq.from(data).group("val");
+			this.assert(result["A"].length == 3 && result["B"].length == 3 && result["C"].length == 3, "Case insensitive grouping did not work correctly.");
+			result = jlinq.from(data).useCase().group("val");
+			this.assert(result["a"].length == 1 && result["b"].length == 1 && result["c"].length == 1 && result["A"].length == 2 && result["B"].length == 2 && result["B"].length == 2, "Case sensitive grouping did not work correctly.");
+
+			//numeric grouping
+			result = jlinq.from([{val:1},{val:1},{val:2},{val:2},{val:3},{val:3},{val:1},{val:2},{val:3}]).group("val");
+			this.assert(result[1].length == 3 && result[2].length == 3 && result[3].length == 3, "numeric grouping did not work correctly.");
+			this.assert(result["1"].length == 3 && result["2"].length == 3 && result["3"].length == 3, "numeric grouping did not work correctly.");
+			
+		
+		}},
+		{name:"", method:function() {
+		
+		}},
+		{name:"", method:function() {
+		
+		}},
+		{name:"", method:function() {
+		
+		}},
+		{name:"", method:function() {
+		
+		}},
+		{name:"", method:function() {
+		
+		}},
+		{name:"", method:function() {
+		
+		}}
     ],
     
     //measures the time of an action
@@ -164,7 +261,8 @@ var test = {
 
         //handles doing the actual work for tests
         var performTest = function() {
-            if (!test.tests[self.index]) { 
+        	var next = test.tests[self.index];
+            if (next == null || next.name == null || next.name.length == 0) { 
                 showTotal();
                 return; 
             }

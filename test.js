@@ -203,12 +203,21 @@ var test = {
 			this.assert(result[1].length == 3 && result[2].length == 3 && result[3].length == 3, "numeric grouping did not work correctly.");
 			this.assert(result["1"].length == 3 && result["2"].length == 3 && result["3"].length == 3, "numeric grouping did not work correctly.");
 			
-		
 		}},
-		{name:"", method:function() {
-		
+		{name:"Is command behaves correctly", method:function() {
+			this.assert(jlinq.from([{val:true},{val:false},{val:true}]).is("val").count() == 2, "Failed to find the correct count for true values");
+			this.assert(jlinq.from([{val:true},{val:false},{val:true}]).notIs("val").count() == 1, "Failed to find the correct count for false values");
+			this.assert(jlinq.from([{val:{}},{val:null},{val:{}}]).is("val").count() == 2, "Failed to find the correct count for object values");
+			this.assert(jlinq.from([{val:{}},{val:null},{val:{}}]).notIs("val").count() == 1, "Failed to find the correct count for empty object values");
 		}},
-		{name:"", method:function() {
+		{name:"Memorizing for Fields and Commands behaves correctly", method:function() {
+			var data = [{val:"abc"},{val:"abc"},{val:"cde"}];
+			this.assert(jlinq.from(data).contains("val","a").orContains("b").count() == 2, "Failed to remember field name requested.");
+			this.assert(jlinq.from(data).contains("val","a").or("val","b").count() == 2, "Failed to remember command requested.");
+			this.assert(jlinq.from(data).contains("val","a").or("b").count() == 2, "Failed to remember field name and command requested.");
+			this.assert(jlinq.from(data).contains("val","a").andNotContains("d").count() == 2, "Failed to remember field name requested for not request.");
+			this.assert(jlinq.from(data).contains("val","a").andNot("val","d").count() == 2, "Failed to remember command requested for not request.");
+			this.assert(jlinq.from(data).contains("val","a").andNot("d").count() == 2, "Failed to remember field name and command requested for not request.");
 		
 		}},
 		{name:"", method:function() {

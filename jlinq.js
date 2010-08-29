@@ -36,7 +36,7 @@ var jl;
             number:2,
             array:3,
             regex:4,
-            boolean:5,
+            bool:5,
             method:6,
             datetime:7,
             object:99
@@ -202,13 +202,19 @@ var jl;
                     //arguments
                     repeat:function(arguments) {
                     
-                        //make sure there is enough information to repeat a command
-                        if (!(self.instance.lastCommand && 
-                            arguments.length == self.instance.lastCommand.method.length)) {
-                            return;
+                        //check if there is anything to repeat
+                        if (!self.instance.lastCommand || arguments == null) { return; }
+                            
+                        //check if there is a field name has changed, and
+                        //if so, update the arguments to match
+                        if (arguments.length == (self.instance.lastCommand.method.length + 1) &&
+                            framework.util.isType(framework.type.string, arguments[0])) {
+                            self.instance.lastField = arguments[0];
+                            arguments = framework.util.toArray(arguments);
+                            arguments = framework.util.select(arguments, null, 1, 0);
                         }
                         
-                        //since the command is ready
+                        //invoke the command now
                         self.queue(self.instance.lastCommand, arguments);
                     },
                     
@@ -284,8 +290,8 @@ var jl;
                         
                         //orNotCommand
                         self.instance.query["orNot"+name] = function() {
-                            self.setNot();
                             self.startNewCommandSet();
+                            self.setNot();
                             return action.apply(null, arguments);
                         };
                         
@@ -365,6 +371,21 @@ var jl;
                     return self.instance.query;
                 };
                 
+                //causes the next command to be a 'not'
+                self.instance.query.andNot = function() { 
+                    self.setNot();
+                    self.repeat(arguments); 
+                    return self.instance.query;
+                };
+                
+                //causes the next command to be a 'not' and 'or'
+                self.instance.query.orNot = function() { 
+                    self.startNewCommandSet();
+                    self.setNot();
+                    self.repeat(arguments); 
+                    return self.instance.query;
+                };
+                
                 //return the query information
                 return self.instance.query;
             
@@ -375,17 +396,17 @@ var jl;
         //variety of helper methods
         util:{
         
-        	//removes trailing and leading spaces from a value
-        	trim:function(value) {
-        		
-        		//get the string value
-        		value = value == null ? "" : value;
-        		value = value.toString();
-        		
-        		//trim the spaces
-        		return value.replace(/^\s*|\s*$/g, "");
-        	
-        	},
+            //removes trailing and leading spaces from a value
+            trim:function(value) {
+                
+                //get the string value
+                value = value == null ? "" : value;
+                value = value.toString();
+                
+                //trim the spaces
+                return value.replace(/^\s*|\s*$/g, "");
+            
+            },
         
             //clones each item in an array
             cloneArray:function(array) {
@@ -637,8 +658,8 @@ var jl;
                     }
                     //if there is a length attribute use it instead
                     else if (a.length && b.length) {
-                    	a = a.length;
-                    	b = b.length;
+                        a = a.length;
+                        b = b.length;
                     }
                     
                     //perform the sorting
@@ -768,7 +789,7 @@ var jl;
     framework.library.addType(framework.type.string, function(value) { return value.substr && value.toLowerCase; });
     framework.library.addType(framework.type.number, function(value) { return value.toFixed && value.toExponential; });
     framework.library.addType(framework.type.regex, function(value) { return value.exec && value.compile; });
-    framework.library.addType(framework.type.boolean, function(value) { return value === true || value === false; });
+    framework.library.addType(framework.type.bool, function(value) { return value === true || value === false; });
     framework.library.addType(framework.type.method, function(value) { return value.apply && value.call; });
     framework.library.addType(framework.type.datetime, function(value) { return value.getDate && value.getTime; });
     
@@ -959,7 +980,7 @@ var jl;
         { name:"is", type:framework.command.query, 
             method:function() {
                 return this.compare({
-                    boolean:function() { return this.value === true; },
+                    bool:function() { return this.value === true; },
                     other:function() { return this.value != null; }
                 });
             }},
@@ -1008,7 +1029,7 @@ var jl;
                     object:function() { return jLinq.util.select(this.records, selection, skip, null); },
                     other:function() { return jLinq.util.select(this.records, null, skip, null); }
                 });
-				return this.query;
+                return this.query;
             }},
             
         //takes the requested number of records
@@ -1115,7 +1136,7 @@ var jl;
         //selects the remaining records
         { name:"removed", type:framework.command.select,
             method:function(selection) {
-				return this.when(selection, {
+                return this.when(selection, {
                     method:function() { return jLinq.util.select(this.removed, selection); },
                     object:function() { return jLinq.util.select(this.removed, selection); },
                     other:function() { return this.removed; }
@@ -1162,18 +1183,18 @@ var jl;
         
         //core function to start and entirely new query
         query:function(collection, params) { 
-        	return library.framework.query(collection, params); 
-		},
+            return library.framework.query(collection, params); 
+        },
         
         //starts a new query with the array provided
         from:function(collection) { 
-        	return framework.library.query(collection, { clone:true });
-		},
+            return framework.library.query(collection, { clone:true });
+        },
         
         //starts a new query that will change records
         modify:function(collection) { 
-        	return framework.library.query(collection, { clone:false });
-		},
+            return framework.library.query(collection, { clone:false });
+        },
         
         //returns a list of commands in the library
         getCommands:function() {
@@ -1192,8 +1213,8 @@ var jl;
         //helper functions for jLinq
         util:{
         
-        	//removes leading and trailing spaces
-        	trim:framework.util.trim,
+            //removes leading and trailing spaces
+            trim:framework.util.trim,
         
             //loops and finds a value in an object from a path
             findValue:framework.util.findValue,

@@ -15,6 +15,119 @@ var test = {
     
     //the actual tests to perform
     tests:[
+        {name:"Base type checking works correctly", method:function() {
+        
+            //checking 'not' matches for a type
+            var self = this;
+            var gauntlet = function(type, name) {
+                if (type != jlinq.type.array) {
+                    self.assert(!jlinq.util.isType(type, new Array()), "Identified new Array() as a " + name);
+                    self.assert(!jlinq.util.isType(type, []), "Identified [] as a " + name);
+                }
+                if (type != jlinq.type.object) {
+                    self.assert(!jlinq.util.isType(type, new Object()), "Identified new Object() as a " + name);
+                    self.assert(!jlinq.util.isType(type, {}), "Identified an object as a " + name);
+                }
+                if (type != jlinq.type.string) {
+                    self.assert(!jlinq.util.isType(type, ""), "Identified '_' as a " + name);
+                    self.assert(!jlinq.util.isType(type, new String()), "Identified new String() as a " + name);
+                }
+                if (type != jlinq.type.datetime) {
+                    self.assert(!jlinq.util.isType(type, new Date()), "Identified new Date() as a " + name);
+                }
+                if (type != jlinq.type.bool) {
+                    self.assert(!jlinq.util.isType(type, new Boolean()), "Identified new Boolean() as a " + name);
+                    self.assert(!jlinq.util.isType(type, new Boolean(false)), "Identified new Boolean(false) as a " + name);
+                    self.assert(!jlinq.util.isType(type, new Boolean(true)), "Identified new Boolean(true) as a " + name);
+                    self.assert(!jlinq.util.isType(type, false), "Identified false as a " + name);
+                    self.assert(!jlinq.util.isType(type, true), "Identified true as a " + name);
+                }
+                if (type != jlinq.type.regex) {
+                    self.assert(!jlinq.util.isType(type, new RegExp()), "Identified new RegExp() as a " + name);
+                    self.assert(!jlinq.util.isType(type, /a/), "Identified regex /a/ as a " + name);
+                }
+                if (type != jlinq.type.method) {
+                    self.assert(!jlinq.util.isType(type, new Function()), "Identified new Function() as a " + name);
+                    self.assert(!jlinq.util.isType(type, function() { }), "Identified function() { } as a " + name);
+                }
+                if (type != jlinq.type.nothing) {
+                    self.assert(!jlinq.util.isType(type, null), "Identified null as a " + name);
+                }
+            };
+            
+            //array checking
+            this.assert(jlinq.util.isType(jlinq.type.array, [1,2,3]), "Did not identify [1,2,3] as an array");
+            this.assert(jlinq.util.isType(jlinq.type.array, new Array()), "Did not identify new Array() as an array");
+            this.assert(jlinq.util.isType(jlinq.type.array, new Array(1,2,3)), "Did not identify new Array(1,2,3) as an array");
+            gauntlet(jlinq.type.array, "array");
+            
+            //checking Number types
+            this.assert(jlinq.util.isType(jlinq.type.number, 1), "Did not identify 1 as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, 0.1), "Did not identify 0.1 as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, 0), "Did not identify 0 as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, 1.1), "Did not identify 1.1 as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, -1), "Did not identify -1 as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, -0.1), "Did not identify -0.1 as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, -0), "Did not identify -0 as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, -1.1), "Did not identify -1.1 as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, new Number(1)), "Did not identify new Number(1) as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, new Number(0.1)), "Did not identify new Number(0.1) as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, new Number(0)), "Did not identify new Number(0) as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, new Number(1.1)), "Did not identify new Number(1.1) as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, new Number(-1)), "Did not identify new Number(-1) as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, new Number(-0.1)), "Did not identify new Number(-0.1) as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, new Number(-0)), "Did not identify new Number(-0) as a number.");
+            this.assert(jlinq.util.isType(jlinq.type.number, new Number(-1.1)), "Did not identify new Number(-1.1) as a number.");
+            gauntlet(jlinq.type.number, "number");
+            
+            //checking string
+            this.assert(jlinq.util.isType(jlinq.type.string, ""), "Did not identify '' as a string");
+            this.assert(jlinq.util.isType(jlinq.type.string, "  "), "Did not identify '  ' as a string");
+            this.assert(jlinq.util.isType(jlinq.type.string, (5).toString()), "Did not identify (5).toString() as a string");
+            this.assert(jlinq.util.isType(jlinq.type.string, new String()), "Did not identify new String() as a string");
+            this.assert(jlinq.util.isType(jlinq.type.string, new String(" ")), "Did not identify new String(' ') as a string");
+            this.assert(jlinq.util.isType(jlinq.type.string, new String(5)), "Did not identify new String(5) as a string");
+            gauntlet(jlinq.type.string, "string");
+            
+            //checking booleans
+            this.assert(jlinq.util.isType(jlinq.type.bool, false), "Did not identify false as boolean");
+            this.assert(jlinq.util.isType(jlinq.type.bool, true), "Did not identify true as boolean");
+            this.assert(jlinq.util.isType(jlinq.type.bool, new Boolean()), "Did not identify new Boolean() as boolean");
+            this.assert(jlinq.util.isType(jlinq.type.bool, new Boolean(false)), "Did not identify new Boolean(false) as boolean");
+            this.assert(jlinq.util.isType(jlinq.type.bool, new Boolean(true)), "Did not identify new Boolean(true) as boolean");
+            gauntlet(jlinq.type.bool, "boolean");
+            
+            //checking regular expressions
+            this.assert(jlinq.util.isType(jlinq.type.regex, /a/), "Did not identify /a/ as a regex");
+            this.assert(jlinq.util.isType(jlinq.type.regex, /a/g), "Did not identify /a/g as a regex");
+            this.assert(jlinq.util.isType(jlinq.type.regex, /a/gi), "Did not identify /a/gi as a regex");
+            this.assert(jlinq.util.isType(jlinq.type.regex, new RegExp()), "Did not identify new RegExp() as a regex");
+            this.assert(jlinq.util.isType(jlinq.type.regex, new RegExp("abc")), "Did not identify new RegExp('abc') as a regex");
+            this.assert(jlinq.util.isType(jlinq.type.regex, new RegExp("abc", "gi")), "Did not identify new RegExp('abc','gi') as a regex");
+            gauntlet(jlinq.type.regex, "regex");
+            
+            //checking dates
+            this.assert(jlinq.util.isType(jlinq.type.datetime, new Date()), "Did not identify new Date() as a datetime");
+            this.assert(jlinq.util.isType(jlinq.type.datetime, new Date("2000/1/1")), "Did not identify new Date('2000/1/1') as a datetime");
+            this.assert(jlinq.util.isType(jlinq.type.datetime, new Date(2000,1,1)), "Did not identify new Date(2000,1,1) as a datetime");
+            gauntlet(jlinq.type.datetime, "datetime");
+            
+            //checking objects
+            this.assert(jlinq.util.isType(jlinq.type.object, {}), "Did not identify {} as an object.");
+            this.assert(jlinq.util.isType(jlinq.type.object, {x:1}), "Did not identify {x:1} as an object.");
+            this.assert(jlinq.util.isType(jlinq.type.object, {x:1,y:2}), "Did not identify {x:1,y:2} as an object.");
+            this.assert(jlinq.util.isType(jlinq.type.object, new Object()), "Did not identify new Object() as an object.");
+            this.assert(jlinq.util.isType(jlinq.type.object, new Object({})), "Did not identify new Object({}) as an object.");
+            this.assert(jlinq.util.isType(jlinq.type.object, new Object({x:1})), "Did not identify new Object({x:1}) as an object.");
+            this.assert(jlinq.util.isType(jlinq.type.object, new Object({x:1,y:2})), "Did not identify new Object({x:1,y:2}) as an object.");
+            gauntlet(jlinq.util.object, "object");
+            
+            //checking methods
+            this.assert(jlinq.util.isType(jlinq.type.method, function() { }), "Did not identify function(){} as a method.");
+            this.assert(jlinq.util.isType(jlinq.type.method, alert), "Did not identify alert() as a method.");
+            gauntlet(jlinq.util.method, "method");
+            
+        }},
         {name:"Starting new collections", method:function() {	
             //problem with empty arrays
             try { jlinq.from(); this.assert(false, "Created a new query using 'from' but no arguments.");
@@ -220,8 +333,32 @@ var test = {
 			this.assert(jlinq.from(data).contains("val","a").andNot("d").count() == 2, "Failed to remember field name and command requested for not request.");
 		
 		}},
-		{name:"", method:function() {
-		
+		{name:"Skip command works correctly", method:function() {
+            this.assert(jlinq.from([1,2,3]).skip(0).count() == 3, "Skip using 0 still removed records.");
+            this.assert(jlinq.from([1,2,3]).skip(1).count() == 2, "Skip removes too many records.");
+            this.assert(jlinq.from([1,2,3]).skip(3).count() == 0, "Skip total record count doesn't return 0 records.");
+            this.assert(jlinq.from([1,2,3]).skip(99).count() == 0, "Skip too many doesn't return 0 records.");
+		}},
+        {name:"Take command works correctly", method:function() {
+            this.assert(jlinq.from([1,2,3]).take(0).length == 0, "Take using 0 returns records.");
+            this.assert(jlinq.from([1,2,3]).take(1).length == 1, "Take includes too many records.");
+            this.assert(jlinq.from([1,2,3]).take(3).length == 3, "Take total record count doesn't return all records.");
+            this.assert(jlinq.from([1,2,3]).take(99).length == 3, "Take too many doesn't return all records.");
+		}},
+        {name:"SkipTake command works correctly", method:function() {
+            this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(0,0).length == 0, "SkipTake 0,0 did not return 0 records.");
+            this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(0,1).length == 1, "SkipTake 0,1 did not return 1 records.");
+            this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(0,3).length == 3, "SkipTake 0,3 did not return 3 records.");
+            this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(0,99).length == 6, "SkipTake 0,99 did not take all records.");
+            this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(1,0).length == 0, "SkipTake 1,0 did not return 0 records.");
+            this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(3,0).length == 0, "SkipTake 3,0 did not return 0 records.");
+            this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(99,0).length == 0, "SkipTake 99,0 did not return 0 records.");
+            this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(1,1).length == 1, "SkipTake 1,1 did not return 1 record.");
+            this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(3,1).length == 1, "SkipTake 3,1 did not return 1 record.");
+            this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(99,1).length == 0, "SkipTake 99,1 did not return 0 records.");
+            this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(1,1).length == 1, "SkipTake 1,1 did not return 1 record.");
+            this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(3,3).length == 3, "SkipTake 3,3 did not return 3 records.");
+            this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(99,99).length == 0, "SkipTake 99,99 did not return 0 records.");
 		}},
 		{name:"", method:function() {
 		

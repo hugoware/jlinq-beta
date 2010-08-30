@@ -116,6 +116,14 @@ var jl;
                         query:{}
                         
                     },
+                    
+                    //determines if the arguments provided meet the
+                    //requirements to be a repeated command
+                    canRepeatCommand:function(args) {
+                        return self.instance.lastCommand != null &&
+                            args.length == (self.instance.lastCommand.method.length + 1) &&
+                            framework.util.isType(framework.type.string, args[0])
+                    },
 
                     //commands waiting to execute
                     commands:[[]],
@@ -204,14 +212,15 @@ var jl;
                     
                         //check if there is anything to repeat
                         if (!self.instance.lastCommand || arguments == null) { return; }
+                        
+                        //get the array of arguments to work with
+                        arguments = framework.util.toArray(arguments);
                             
                         //check if there is a field name has changed, and
                         //if so, update the arguments to match
-                        if (arguments.length == (self.instance.lastCommand.method.length + 1) &&
-                            framework.util.isType(framework.type.string, arguments[0])) {
+                        if (self.canRepeatCommand(arguments)) {
                             self.instance.lastField = arguments[0];
-                            arguments = framework.util.toArray(arguments);
-                            arguments = framework.util.select(arguments, null, 1, 0);
+                            arguments = framework.util.select(arguments, null, 1, null);
                         }
                         
                         //invoke the command now
@@ -470,7 +479,7 @@ var jl;
         
             //gets a path from a field name
             getPath:function(path) {
-                return (path+"").split(framework.exp.get_path);
+                return framework.util.toString(path).split(framework.exp.get_path);
             },
         
             //searches an object to find a value
@@ -526,8 +535,8 @@ var jl;
                 }
             
                 //create the actual expression and match
-                expression = new RegExp((expression ? expression+"" : "").toString(), ignoreCase ? "gi" : "g");
-                return (source+"").match(expression) != null;
+                expression = new RegExp(framework.util.toString(expression), ignoreCase ? "gi" : "g");
+                return framework.util.toString(source).match(expression) != null;
             },
         
             //converts a command to an operator name
@@ -697,7 +706,7 @@ var jl;
                     
                     //get the values
                     var record = records[item];
-                    var alias = framework.util.findValue(record, field)+"";
+                    var alias = framework.util.toString(framework.util.findValue(record, field));
                     alias = ignoreCase ? alias.toUpperCase() : alias;
 
                     //check for existing values
@@ -740,13 +749,37 @@ var jl;
                 return items;
             },
             
+            //converts a value into a string
+            toString:function(val) {
+                return val == null ? "" : val.toString();
+            },
+            
+            //grabs a range of records from a collection
+            skipTake:function(collection, action, skip, take) {
+            
+                //set the defaults
+                skip = skip == null ? 0 : skip;
+                take = take == null ? collection.length : take;
+                
+                //check if this will return any records
+                if (skip >= collection.length || 
+                    take == 0) {
+                    return []; 
+                }
+            
+                //return the results
+                return framework.util.select(collection, action, skip, skip + take);
+            },
+            
             //grabs a range and format for records
             select:function(collection, action, start, end) {
 
                 //grab the records if there is a range
-                start = start ? start : 0;
-                end = end ? end : collection.length;
-                var results = collection.splice(start, end);
+                start = start == null ? 0 : start;
+                end = end == null ? collection.length : end;
+                
+                //slice the records
+                var results = collection.slice(start, end);
                 
                 //check if this is a mapping method
                 if (jLinq.util.isType(jLinq.type.object, action)) {
@@ -785,13 +818,13 @@ var jl;
     
     //default types
     framework.library.addType(framework.type.nothing, function(value) { return value == null; });
-    framework.library.addType(framework.type.array, function(value) { return value.push && value.splice; });
+    framework.library.addType(framework.type.array, function(value) { return value instanceof Array; });
     framework.library.addType(framework.type.string, function(value) { return value.substr && value.toLowerCase; });
     framework.library.addType(framework.type.number, function(value) { return value.toFixed && value.toExponential; });
-    framework.library.addType(framework.type.regex, function(value) { return value.exec && value.compile; });
-    framework.library.addType(framework.type.bool, function(value) { return value === true || value === false; });
-    framework.library.addType(framework.type.method, function(value) { return value.apply && value.call; });
-    framework.library.addType(framework.type.datetime, function(value) { return value.getDate && value.getTime; });
+    framework.library.addType(framework.type.regex, function(value) { return value instanceof RegExp; });
+    framework.library.addType(framework.type.bool, function(value) { return value == true || value == false; });
+    framework.library.addType(framework.type.method, function(value) { return value instanceof Function; });
+    framework.library.addType(framework.type.datetime, function(value) { return value instanceof Date; });
     
     //add the default methods
     framework.library.extend([
@@ -1025,9 +1058,9 @@ var jl;
         { name:"skip", type:framework.command.select,
             method:function(skip, selection) {
                 this.records = this.when(selection, {
-                    method:function() { return jLinq.util.select(this.records, selection, skip, null); },
-                    object:function() { return jLinq.util.select(this.records, selection, skip, null); },
-                    other:function() { return jLinq.util.select(this.records, null, skip, null); }
+                    method:function() { return jLinq.util.skipTake(this.records, selection, skip, null); },
+                    object:function() { return jLinq.util.skipTake(this.records, selection, skip, null); },
+                    other:function() { return jLinq.util.skipTake(this.records, null, skip, null); }
                 });
                 return this.query;
             }},
@@ -1036,9 +1069,9 @@ var jl;
         { name:"take", type:framework.command.select,
             method:function(take, selection) {
                 return this.when(selection, {
-                    method:function() { return jLinq.util.select(this.records, selection, null, take); },
-                    object:function() { return jLinq.util.select(this.records, selection, null, take); },
-                    other:function() { return jLinq.util.select(this.records, null, null, take); }
+                    method:function() { return jLinq.util.skipTake(this.records, selection, null, take); },
+                    object:function() { return jLinq.util.skipTake(this.records, selection, null, take); },
+                    other:function() { return jLinq.util.skipTake(this.records, null, null, take); }
                 });
             }},
             
@@ -1046,9 +1079,9 @@ var jl;
         { name:"skipTake", type:framework.command.select,
             method:function(skip, take, selection) {
                 return this.when(selection, {
-                    method:function() { return jLinq.util.select(this.records, selection, skip, take); },
-                    object:function() { return jLinq.util.select(this.records, selection, skip, take); },
-                    other:function() { return jLinq.util.select(this.records, null, skip, take); }
+                    method:function() { return jLinq.util.skipTake(this.records, selection, skip, take); },
+                    object:function() { return jLinq.util.skipTake(this.records, selection, skip, take); },
+                    other:function() { return jLinq.util.skipTake(this.records, null, skip, take); }
                 });
             }},
             
@@ -1262,7 +1295,10 @@ var jl;
             apply:framework.util.apply,
             
             //uses the action to select items from a collection
-            select:framework.util.select
+            select:framework.util.select,
+            
+            //grabs records for a specific range
+            skipTake:framework.util.skipTake
             
         }
     };

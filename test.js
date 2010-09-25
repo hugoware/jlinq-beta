@@ -124,7 +124,7 @@ var test = {
             
             //checking methods
             this.assert(jlinq.util.isType(jlinq.type.method, function() { }), "Did not identify function(){} as a method.");
-            this.assert(jlinq.util.isType(jlinq.type.method, alert), "Did not identify alert() as a method.");
+            this.assert(jlinq.util.isType(jlinq.type.method, jlinq.from), "Did not identify jlinq.from as a method.");
             gauntlet(jlinq.util.method, "method");
             
         }},
@@ -360,7 +360,11 @@ var test = {
             this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(3,3).length == 3, "SkipTake 3,3 did not return 3 records.");
             this.assert(jlinq.from([1,2,3,4,5,6]).skipTake(99,99).length == 0, "SkipTake 99,99 did not return 0 records.");
 		}},
-		{name:"", method:function() {
+		{name:"JSON string data", method:function() {
+        
+        
+            
+            this.assert(jlinq.from([{"name":"joe"},{"name":"mike"}]).ends("name", "e").count() == 2, "Did not find correct data with string named JSON data.");
 		
 		}},
 		{name:"", method:function() {

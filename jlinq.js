@@ -1221,11 +1221,6 @@ var jl;
         
         //starts a new query with the array provided
         from:function(collection) { 
-            return framework.library.query(collection, { clone:true });
-        },
-        
-        //starts a new query that will change records
-        modify:function(collection) { 
             return framework.library.query(collection, { clone:false });
         },
         

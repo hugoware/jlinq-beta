@@ -84,21 +84,8 @@
             //merge with the selection
             var records = fn.toArray(matches);
             this.records = this.records.concat(records);
-        }},
-        
-        //converts to a jQuery object then appends the elements
-        { name:"appendTo", type:jlinq.command.select,
-        method:function(selector, source) {
-            var target = fn.findTarget(selector, source);
-            return fn.toJQuery(this.records).appendTo(target);
-        }},
-        
-        //converts to a jQuery object then prepends the elements
-        { name:"prependTo", type:jlinq.command.select,
-        method:function(selector, source) {
-            var target = fn.findTarget(selector, source);
-            return fn.toJQuery(this.records).prependTo(target);
         }}
+        
     ]);
         
     //extend jQuery

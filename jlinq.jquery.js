@@ -37,9 +37,10 @@
         
         //performs a selection for records
         select:function(selector, records) {
-            var result = fn.toJQuery(records);
-            if (jlinq.util.isType(jlinq.type.string, selector)) result = result.find(selector);
-            return result;
+            var selection = $(records);
+            return jlinq.util.isType(jlinq.type.string, selector) 
+                ? selection.find(selector)
+                : selection;
         },
         
         //converts a jQuery object into an array
@@ -47,13 +48,6 @@
             var records = [];
             obj.each(function(i, v) { records.push($(v)); });
             return records;
-        },
-        
-        //converts back to a jquery object
-        toJQuery:function(collection) {
-            var container = $();
-            jlinq.from(collection).each(function(rec) { container = container.add(rec); });
-            return container;
         }
         
     };

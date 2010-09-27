@@ -652,10 +652,17 @@ var jl;
                 var field = fields.splice(0, 1);
                 if (field.length == 0) { return collection; }
                 field = field[0];
-                               
-                //check for the direction
-                var desc = field.match(/^\-/);
-                if (desc) { field = field.substr(1); }
+                
+                //get the name of the field and descending or not
+                var invoked = framework.util.isType(framework.type.array, field);
+                var name = (invoked ? field[0] : field);
+                var desc = name.match(/^\-/);
+                name = desc ? name.substr(1) : name;
+                
+                //updat the name if needed
+                if (desc) { 
+                    if (invoked) { field[0] = name; } else { field = name; }
+                }
                 
                 //reorder the actual collection now
                 collection.sort(function(a, b) {

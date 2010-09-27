@@ -1,3 +1,9 @@
+/*
+ * jLinq - 3.0.1
+ * Hugo Bonacci - hugoware.com
+ * http://creativecommons.org/licenses/by/3.0/
+ */
+
 var jLinq;
 var jlinq;
 var jl;

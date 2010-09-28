@@ -233,6 +233,13 @@ var test = {
             var arrays = [{val:[1,1,1,1]},{val:[1,1,1]},{val:[1]}];
             var nulls = [{val:null},{val:"a"},{val:"b"},{val:null}];
             
+            //checks to solve IE sorting errors
+            var results = jlinq.from(data.users).starts("first", "a").sort("first").select(function(rec) { return rec.first.toLowerCase(); });
+            results = jlinq.from(data.users).starts("first", "a").sort("first").select(function(rec) { return rec.first.toLowerCase(); });
+            results = jlinq.from(data.users).starts("first", "a").sort("first").select(function(rec) { return rec.first.toLowerCase(); });
+            var ordered = results[0] == "abby" && results[1] == "abigail" && results[2] == "adam" && results[3] == "audrey" && results[4] == "ava";
+            this.assert(ordered, "String sorting failed to create the correct order on a reused object.");
+            
             //check string sorting
             var results = jlinq.from(letters).sort("val").select(function(rec) { return rec.val.toLowerCase(); });
             var ordered = results[0] == "a" && results[1] == "b" && results[2] == "c" && results[3] == "d";

@@ -664,12 +664,15 @@ var jl;
                     if (invoked) { field[0] = name; } else { field = name; }
                 }
                 
+                //IE sorting bug resolved (Thanks @rizil)
+                //http://webcache.googleusercontent.com/search?q=cache:www.zachleat.com/web/2010/02/24/array-sort/+zach+array+sort
+                
                 //create the sorting method for this field
-                var sort = function(a, b) {
+                var sort = function(val1, val2) {
                 
                     //find the values to compare
-                    a = framework.util.findValue(a, field);
-                    b = framework.util.findValue(b, field);
+                    var a = framework.util.findValue(val1, field);
+                    var b = framework.util.findValue(val2, field);
                     
                     //default to something when null
                     if (a == null && b == null) { a = 0; b = 0; }

@@ -664,15 +664,20 @@ var jl;
                     if (invoked) { field[0] = name; } else { field = name; }
                 }
                 
-                //reorder the actual collection now
-                collection.sort(function(a, b) {
-                    
+                //create the sorting method for this field
+                var sort = function(a, b) {
+                
                     //find the values to compare
                     a = framework.util.findValue(a, field);
                     b = framework.util.findValue(b, field);
                     
-                    //check for case
-                    if (ignoreCase && 
+                    //default to something when null
+                    if (a == null && b == null) { a = 0; b = 0; }
+                    else if (a == null && b != null) { a = 0; b = 1; }
+                    else if (a != null && b == null) { a = 1; b = 0; }
+                    
+                    //check for string values
+                    else if (ignoreCase && 
                         framework.util.isType(framework.type.string, a) && 
                         framework.util.isType(framework.type.string, b)) {
                         a = a.toLowerCase();
@@ -687,8 +692,11 @@ var jl;
                     //perform the sorting
                     var result = (a < b) ? -1 : (a > b) ? 1 : 0;
                     return desc ? -result : result;
-                    
-                });
+                
+                };
+                
+                //then perform the sorting
+                collection.sort(sort);
                 
                 //check for sub groups if required
                 if (fields.length > 0) {

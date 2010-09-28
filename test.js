@@ -227,26 +227,36 @@ var test = {
 			this.assert(jlinq.from([{value:"x^r$"}]).useCase().ends("value", "^R$").none(), "Failed to escape regex characters for matching - case-sensitive.");
         }},
         {name:"Sort command behaves correctly.", method:function() {	
+            var letters = [{val:"D"},{val:"c"},{val:"A"},{val:"b"}];
+            var numbers = [{val:3},{val:2},{val:0},{val:1}];
+            var bools = [{val:true},{val:false}];
+            var arrays = [{val:[1,1,1,1]},{val:[1,1,1]},{val:[1]}];
+            var nulls = [{val:null},{val:"a"},{val:"b"},{val:null}];
             
             //check string sorting
-            var results = jlinq.from(data.users).starts("first", "a").sort("first").select(function(rec) { return rec.first.toLowerCase(); });
-            var ordered = results[0] == "abby" && results[1] == "abigail" && results[2] == "adam" && results[3] == "audrey" && results[4] == "ava";
+            var results = jlinq.from(letters).sort("val").select(function(rec) { return rec.val.toLowerCase(); });
+            var ordered = results[0] == "a" && results[1] == "b" && results[2] == "c" && results[3] == "d";
             this.assert(ordered, "String sorting failed to create the correct order.");
             
 			//check numeric sorting
-            results = jlinq.from(data.users).sort("age").select(function(rec) { return rec.age; });
-            ordered = results[0] == 12 && results[1] == 14 && results[2] == 14 && results[3] == 16 && results[4] == 17;
+            results = jlinq.from(numbers).sort("val").select(function(rec) { return rec.val; });
+            ordered = results[0] == 0 && results[1] == 1 && results[2] == 2 && results[3] == 3;
             this.assert(ordered, "Numeric sorting failed to create the correct order.");
             
             //boolean sorting
-            results = jlinq.from([{val:true},{val:false}]).sort("val").select(function(r) { return r.val; });
+            results = jlinq.from(bools).sort("val").select(function(r) { return r.val; });
             ordered = results[0] === false && results[1] === true;
             this.assert(ordered, "Boolean sorting failed to create the correct order.");
             
             //array sorting
-            results = jlinq.from([{val:[1,1,1,1]},{val:[1,1,1]},{val:[1]}]).sort("val").select(function(r) { return r.val.length; });
+            results = jlinq.from(arrays).sort("val").select(function(r) { return r.val.length; });
             ordered = results[0] == 1 && results[1] == 3 && results[2] == 4;
             this.assert(ordered, "Array length sorting failed to create correct order.");
+            
+            //sorting with nulls
+            results = jlinq.from(nulls).sort("val").select(function(r) { return r.val; });
+            ordered = results[0] == null && results[1] == null && results[2] == "a" && results[3] == "b";
+            this.assert(ordered, "Failed to sort null values correctly.");
         
         }},
 		{name:"First command behaves correctly", method:function() {
@@ -271,7 +281,6 @@ var test = {
 			this.assert(jlinq.from([]).count() == 0, "Found matches on empty array.");
 			this.assert(jlinq.from([1,1,1]).count() == 3, "Did not find correct count on a non-query select.");
 			this.assert(jlinq.from([{val:1},{val:1},{val:1},{val:2}]).equals("val", 1).count() == 3, "Did not select the correct number of records on a query count.");
-		
 		}},
 		{name:"Any command works correctly", method:function() {
 			this.assert(!jlinq.from([]).any(), "Returned that values were found .");

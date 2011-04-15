@@ -167,7 +167,7 @@ var jl;
                     evaluate:function(state) {
                         
                         //check each of the command sets
-                        for (var command in self.commands) {
+                        for (var command = 0, l = self.commands.length; command < l; command++) {
                         
                             //each set represents an 'or' set - if any
                             //match then return this worked
@@ -186,7 +186,7 @@ var jl;
                     
                         //check each command in this set
                         for (var item in set) {
-                            
+                            if (!set.hasOwnProperty(item)) continue;
                             //get the details to use
                             var command = set[item];
                             state.value = self.findValue(state.record, command.path);
@@ -443,7 +443,7 @@ var jl;
                 else if (framework.util.isType(framework.type.object, obj)) {
                     var clone = {};
                     for(var item in obj) {
-                        clone[item] = framework.util.clone(obj[item]);
+                        if (obj.hasOwnProperty(item)) clone[item] = framework.util.clone(obj[item]);
                     }
                     return clone;
                 }
@@ -564,6 +564,7 @@ var jl;
                 
                 //check each of the types
                 for (var item in types) {
+                    if (!types.hasOwnProperty(item)) continue;
                     var type = framework.type[item];
                     if (type == kind) { 
                         return types[item].apply(state, [value]); 
@@ -580,7 +581,9 @@ var jl;
             //performs an action on each item in a collection
             each:function(collection, action) {
                 var index = 0;
-                for(var item in collection) action(collection[item], index++);
+                for(var item in collection){
+                    if (collection.hasOwnProperty(item)) action(collection[item], index++);
+                }
             },
             
             //performs an action to each item in a collection and then returns the items
@@ -594,9 +597,8 @@ var jl;
             
             //performs an action on each item in a collection
             until:function(collection, action) {
-                var index = 0;
-                for(var item in collection) {
-                    var result = action(collection[item], index++);
+                for(var item = 0, l = collection.length; item < l; item++) {
+                    var result = action(collection[item], item + 1);
                     if (result === true) { return true; }
                 }
                 return false;
@@ -632,7 +634,7 @@ var jl;
             //append items onto a target object
             apply:function(target, source) {
                 for(var item in source) {
-                    target[item] = source[item];
+                    if (source.hasOwnProperty(item)) target[item] = source[item];
                 }
                 return target;
             },
@@ -726,8 +728,7 @@ var jl;
             
                 //create a container to track group names
                 var groups = {};
-                for(var item in records) {
-                    
+                for(var item = 0, l = records.length; item < l; item++) {
                     //get the values
                     var record = records[item];
                     var alias = framework.util.toString(framework.util.findValue(record, field));
@@ -768,7 +769,9 @@ var jl;
                     for (var i = 0; i < obj.length; i++) { items.push(obj[i]); }
                 }
                 else {
-                    for (var item in obj) { items.push(obj[item]); }
+                    for (var item in obj) {
+                        if (obj.hasOwnProperty(item)) items.push(obj[item]);
+                    }
                 }
                 return items;
             },
@@ -811,8 +814,10 @@ var jl;
                     action = function(rec) {
                         
                         //map existing values or defaults
+                        // TODO: tests do not cover this method!
                         var create = {};
                         for (var item in map) {
+                            if (!map.hasOwnProperty(item)) continue;
                             create[item] = rec[item]
                                 ? rec[item]
                                 : map[item];
